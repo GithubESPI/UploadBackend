@@ -13,14 +13,12 @@ logger.setLevel(logging.DEBUG)
 def normalize_string(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn').lower()
 
-
 def process_excel_file(file_path: str, output_dir: str) -> list:
     try:
         logger.debug("Chargement du fichier Excel.")
         df_titles = pd.read_excel(file_path, header=None)
-        titles_row = df_titles.iloc[0, 2:22].tolist()  # Adjusted to C1 to V1
-        
         df_students = pd.read_excel(file_path, header=1)
+        
         df_students = df_students.rename(columns={
             'DatedeNaissance': 'Date de Naissance',
             'NomSite': 'Nom Site',
@@ -32,38 +30,89 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
         })
         logger.debug(f"{len(df_students)} étudiants trouvés dans le fichier.")
         
-        templates = {
-            "MAPI": settings.M1_S1_MAPI_TEMPLATE_WORD,
-            "MAGI": settings.M1_S1_MAGI_TEMPLATE_WORD,
-            "MEFIM": settings.M1_S1_MEFIM_TEMPLATE_WORD
+        cases = {
+            "M1_S1": {
+                "titles_row": df_titles.iloc[0, 2:22].tolist(),
+                "template_word": settings.M1_S1_MAPI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 4, 5, 7, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 21],
+                "ects_sum_indices": {
+                    'UE1': [1, 2, 3],
+                    'UE2': [4],
+                    'UE3': [5, 6],
+                    'UE4': [7, 11],
+                    'UE5': [13, 14, 15]
+                }
+            },
+            "M1_S2": {
+                "titles_row": df_titles.iloc[0, 2:22].tolist(),
+                "template_word": settings.M1_S2_MAPI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21],
+                "ects_sum_indices": {
+                    'UE1': [1, 2, 3],
+                    'UE2': [5, 6],
+                    'UE3': [8, 9, 10, 11, 12, 13, 14],
+                    'UE4': [16],
+                }
+            },
+            "M2_S3_MAGI_MEFIM": {
+                "titles_row": df_titles.iloc[0, 2:19].tolist(),
+                "template_word": settings.M2_S3_MAGI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18],
+                "ects_sum_indices": {
+                    'UE1': [1, 2],
+                    'UE2': [3],
+                    'UE3': [4, 5, 6, 7, 8, 9],
+                    'UE4': [10, 11, 12, 13],
+                }
+            },
+            "M2_S3_MAPI": {
+                "titles_row": df_titles.iloc[0, 2:20].tolist(),
+                "template_word": settings.M2_S3_MAPI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19],
+                "ects_sum_indices": {
+                    'UE1': [1, 2],
+                    'UE2': [3],
+                    'UE3': [4, 5, 6, 7, 8, 9],
+                    'UE4': [10, 11, 12, 13, 14],
+                }
+            },
+            "M2_S4": {
+                "titles_row": df_titles.iloc[0, 2:17].tolist(),
+                "template_word": settings.M2_S4_MAPI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 5, 6, 8, 9, 10, 11, 12, 14, 15, 16],
+                "ects_sum_indices": {
+                    'UE1': [1],
+                    'UE2': [2, 3],
+                    'UE3': [4, 5, 6, 7, 8],
+                    'UE4': [9, 10, 11],
+                }
+            }
         }
         
-        matching_values = {
-            "MAPI": ['UE 1 – Economie & Gestion', 'Stratégie et Solutions Immobilières', 'Finance Immobilière', 'Economie Immobilière I', 'UE 2 – Droit', 'Droit des Affaires et des Contrats', 'UE 3 – Aménagement & Urbanisme', 'Ville et Développements Urbains', "Politique de l'Habitat", 'UE 4 – Compétences Professionnalisantes', 'Real Estate English', "Les Rencontres de l'Immobilier", 'ESPI Career Services', 'ESPI Inside', 'Immersion Professionnelle', 'Projet Voltaire', 'UE SPE – MAPI', 'Etude Foncière', "Montage d'une Opération de Promotion Immobilière", 'Acquisition et Dissociation du Foncier'],
-            "MAGI": ['UE 1 – Economie & Gestion', 'Stratégie et Solutions Immobilières', 'Finance Immobilière', 'Economie Immobilière I', 'UE 2 – Droit', 'Droit des Affaires et des Contrats', 'UE 3 – Aménagement & Urbanisme', 'Ville et Développements Urbains', "Politique de l'Habitat", 'UE 4 – Compétences Professionnalisantes', 'Real Estate English', "Les Rencontres de l'Immobilier", 'ESPI Career Services', 'ESPI Inside', 'Immersion Professionnelle', 'Projet Voltaire', 'UE SPE – MAGI', 'Baux Commerciaux et Gestion Locative', 'Actifs Tertiaires en Copropriété', 'Techniques du Bâtiment'],
-            "MEFIM": ['UE 1 – Economie & Gestion', 'Stratégie et Solutions Immobilières', 'Finance Immobilière', 'Economie Immobilière I', 'UE 2 – Droit', 'Droit des Affaires et des Contrats', 'UE 3 – Aménagement & Urbanisme', 'Ville et Développements Urbains', "Politique de l'Habitat", 'UE 4 – Compétences Professionnalisantes', 'Real Estate English', "Les Rencontres de l'Immobilier", 'ESPI Career Services', 'ESPI Inside', 'Immersion Professionnelle', 'Projet Voltaire', 'UE SPE – MEFIM', "Les Fondamentaux de l'Evaluation", 'Analyse et Financement Immobilier', 'Modélisation Financière'],
-        }
-        
-        # Normalize titles for comparison
-        normalized_titles_row = [normalize_string(title) for title in titles_row]
+        # Check the existence of the uploaded file
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=400, detail="File not found")
 
-        # Identify the template based on the normalized titles_row
-        template_key = None
-        for key, values in matching_values.items():
-            normalized_values = [normalize_string(value) for value in values]
-            if normalized_titles_row == normalized_values:
-                template_key = key
-                break
+        # Get the filename from the file_path
+        filename = os.path.basename(file_path)
 
-        if template_key is None:
-            raise HTTPException(status_code=400, detail="No matching template found")
+        # Determine the case key based on the filename comparison
+        if filename in [os.path.basename(settings.M1_S1_MAPI_TEMPLATE), os.path.basename(settings.M1_S1_MAGI_TEMPLATE), os.path.basename(settings.M1_S1_MEFIM_TEMPLATE), os.path.basename(settings.M1_S1_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S1_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S1_MEFIM_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M1_S1"
+        elif filename in [os.path.basename(settings.M1_S2_MAPI_TEMPLATE), os.path.basename(settings.M1_S2_MAGI_TEMPLATE), os.path.basename(settings.M1_S2_MEFIM_TEMPLATE), os.path.basename(settings.M1_S2_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S2_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S2_MEFIM_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M1_S2"
+        elif filename in [os.path.basename(settings.M2_S3_MAPI_TEMPLATE), os.path.basename(settings.M2_S3_MAGI_TEMPLATE), os.path.basename(settings.M2_S3_MEFIM_TEMPLATE), os.path.basename(settings.M2_S3_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S3_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S3_MEFIM_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M2_S3_MAGI_MEFIM" if "MAGI" in filename or "MEFIM" in filename else "M2_S3_MAPI"
+        elif filename in [os.path.basename(settings.M2_S4_MAPI_TEMPLATE), os.path.basename(settings.M2_S4_MAGI_TEMPLATE), os.path.basename(settings.M2_S4_MEFIM_TEMPLATE), os.path.basename(settings.M2_S4_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S4_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S4_MEFIM_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M2_S4"
+        else:
+            raise HTTPException(status_code=400, detail="Unknown Excel template")
 
-        template_path = templates[template_key]
-        logger.debug(f"Using template: {template_path}")
+        case_config = cases[case_key]
 
         bulletin_paths = []
         for index, student_data in df_students.iterrows():
-            bulletin_path = generate_word_document(student_data, titles_row, template_path, output_dir)
+            bulletin_path = generate_word_document(student_data, case_config, case_config["template_word"], output_dir)
             bulletin_paths.append(bulletin_path)
             logger.debug(f"Bulletin généré pour {student_data.get('Nom', 'N/A')}: {bulletin_path}")
 
