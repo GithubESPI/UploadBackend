@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 def normalize_string(s):
+    if not isinstance(s, str):
+        s = str(s)
     return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn').lower()
 
 def process_excel_file(file_path: str, output_dir: str) -> list:
@@ -32,6 +34,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
         
         cases = {
             "M1_S1": {
+                "key": "M1_S1",
                 "titles_row": df_titles.iloc[0, 2:22].tolist(),
                 "template_word": settings.M1_S1_MAPI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 4, 5, 7, 9, 10, 12, 13, 14, 15, 16, 17, 19, 20, 21],
@@ -44,6 +47,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 }
             },
             "M1_S2": {
+                "key": "M1_S2",
                 "titles_row": df_titles.iloc[0, 2:22].tolist(),
                 "template_word": settings.M1_S2_MAPI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21],
@@ -55,6 +59,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 }
             },
             "M2_S3_MAGI_MEFIM": {
+                "key": "M2_S3_MAGI_MEFIM",
                 "titles_row": df_titles.iloc[0, 2:19].tolist(),
                 "template_word": settings.M2_S3_MAGI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18],
@@ -66,6 +71,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 }
             },
             "M2_S3_MAPI": {
+                "key": "M2_S3_MAPI",
                 "titles_row": df_titles.iloc[0, 2:20].tolist(),
                 "template_word": settings.M2_S3_MAPI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19],
@@ -77,6 +83,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 }
             },
             "M2_S4": {
+                "key": "M2_S4",
                 "titles_row": df_titles.iloc[0, 2:17].tolist(),
                 "template_word": settings.M2_S4_MAPI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 5, 6, 8, 9, 10, 11, 12, 14, 15, 16],
@@ -109,9 +116,11 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
             raise HTTPException(status_code=400, detail="Unknown Excel template")
 
         case_config = cases[case_key]
-
+        
         bulletin_paths = []
         for index, student_data in df_students.iterrows():
+            # Ensure all fields are strings to avoid issues with normalize_string
+            student_data = student_data.fillna('').astype(str)
             bulletin_path = generate_word_document(student_data, case_config, case_config["template_word"], output_dir)
             bulletin_paths.append(bulletin_path)
             logger.debug(f"Bulletin généré pour {student_data.get('Nom', 'N/A')}: {bulletin_path}")
@@ -120,3 +129,4 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
     except Exception as e:
         logger.error("Erreur lors du traitement du fichier Excel", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error processing Excel file: {e}")
+
