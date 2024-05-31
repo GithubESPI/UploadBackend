@@ -55,7 +55,7 @@ def calculate_weighted_average(notes, ects):
     total_ects = sum(ects)
     return total_grade / total_ects if total_ects != 0 else 0
 
-def generate_placeholders(titles_row, case_key, student_data, current_date):
+def generate_placeholders(titles_row, case_key, student_data, current_date, ects_data):
     placeholders = {
         "nomApprenant": student_data["Nom"],
         "etendugroupe": student_data["Étendu Groupe"],
@@ -174,6 +174,10 @@ def generate_placeholders(titles_row, case_key, student_data, current_date):
             "matiere11": titles_row[14],
         })
 
+    # Add ECTS values to placeholders
+    for i in range(1, 16):
+        placeholders[f"ECTS{i}"] = ects_data.get(f"ECTS{i}", 0)
+
     return placeholders
 
 def generate_word_document(student_data, case_config, template_path, output_dir):
@@ -183,7 +187,13 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     is_relevant_group = group_name in settings.RELEVANT_GROUPS
     logger.debug("Processing document for group: %s", group_name)
 
-    placeholders = generate_placeholders(case_config["titles_row"], case_config["key"], student_data, current_date)
+    # Correct case key if necessary
+    corrected_key = case_config["key"].replace("_", "-")
+
+    ects_data = ects_config.get(corrected_key, [{}])[0]
+    logger.debug(f"ECTS data for {corrected_key}: {ects_data}")
+
+    placeholders = generate_placeholders(case_config["titles_row"], case_config["key"], student_data, current_date, ects_data)
 
     total_ects = 0  # Initialize total ECTS
 
@@ -194,7 +204,7 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
             individual_average = calculate_weighted_average([g[0] for g in grades_coefficients], [g[1] for g in grades_coefficients])
             placeholders[f"note{i}"] = f"{individual_average:.2f}" if individual_average else ""
             if individual_average >= 8:
-                ects_value = int(ects_config.get(f"ECTS{i}", 0))
+                ects_value = ects_data.get(f"ECTS{i}", 0)
                 placeholders[f"ECTS{i}"] = ects_value
             else:
                 placeholders[f"ECTS{i}"] = 0
@@ -225,4 +235,3 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     output_filepath = os.path.join(output_dir, output_filename)
     doc.save(output_filepath)
     return output_filepath
-

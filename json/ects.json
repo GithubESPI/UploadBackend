@@ -8,74 +8,14 @@
       "ECTS5": 2,
       "ECTS6": 2,
       "ECTS7": 2,
-      "ECTS8": 1,
-      "ECTS9": 1,
-      "ECTS10": 1,
+      "ECTS8": 0,
+      "ECTS9": 0,
+      "ECTS10": 0,
       "ECTS11": 9,
-      "ECTS12": 1,
+      "ECTS12": 0,
       "ECTS13": 2,
       "ECTS14": 2,
       "ECTS15": 2
-    }
-  ],
-  "M1-S2": [
-    {
-      "ECTS1": 2,
-      "ECTS2": 2,
-      "ECTS3": 2,
-      "ECTS4": 2,
-      "ECTS5": 1,
-      "ECTS6": 9,
-      "ECTS7": 2,
-      "ECTS8": 2,
-      "ECTS9": 0,
-      "ECTS10": 1,
-      "ECTS11": 1,
-      "ECTS12": 1,
-      "ECTS13": 2,
-      "ECTS14": 2,
-      "ECTS15": 2,
-      "ECTS16": 2
-    }
-  ],
-  "M2-S3": [
-    {
-      "ECTS1": 2,
-      "ECTS2": 2,
-      "ECTS3": 2,
-      "ECTS4": 0,
-      "ECTS5": 9,
-      "ECTS6": 2,
-      "ECTS7": 2,
-      "ECTS8": 0,
-      "ECTS9": 0,
-      "ECTS10": 2,
-      "ECTS11": 3,
-      "ECTS12": 2,
-      "ECTS13": 2,
-      "ECTS14": 2,
-      "ECTS15": 2,
-      "ECTS16": 2
-    }
-  ],
-  "M2-S4": [
-    {
-      "ECTS1": 2,
-      "ECTS2": 2,
-      "ECTS3": 2,
-      "ECTS4": 2,
-      "ECTS5": 5,
-      "ECTS6": 0,
-      "ECTS7": 0,
-      "ECTS8": 9,
-      "ECTS9": 4,
-      "ECTS10": 2,
-      "ECTS11": 2,
-      "ECTS12": 4,
-      "ECTS13": 2,
-      "ECTS14": 2,
-      "ECTS15": 4,
-      "ECTS16": 2
     }
   ]
 }

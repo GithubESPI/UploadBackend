@@ -116,7 +116,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
             raise HTTPException(status_code=400, detail="Unknown Excel template")
 
         case_config = cases[case_key]
-        
+
         bulletin_paths = []
         for index, student_data in df_students.iterrows():
             # Ensure all fields are strings to avoid issues with normalize_string

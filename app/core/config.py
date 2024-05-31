@@ -111,3 +111,4 @@ class Settings(BaseSettings):
 
 # Instanciez les paramètres pour qu'ils soient importés et utilisés dans d'autres fichiers
 settings = Settings()
+
