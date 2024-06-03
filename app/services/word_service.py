@@ -1,8 +1,8 @@
 import logging
 import json
+from datetime import datetime
 import pandas as pd
 from docxtpl import DocxTemplate
-from datetime import datetime
 from app.core.config import settings
 import os
 import unicodedata
@@ -24,7 +24,7 @@ def normalize_string(s):
 def extract_grades_and_coefficients(grade_str):
     grades_coefficients = []
     if not grade_str.strip():
-            return grades_coefficients  # Return empty list if string is empty
+        return grades_coefficients  # Return empty list if string is empty
     parts = grade_str.split(" - ")
     for part in parts:
         if "Absent au devoir" in part:
@@ -55,7 +55,7 @@ def calculate_weighted_average(notes, ects):
     total_ects = sum(ects)
     return total_grade / total_ects if total_ects != 0 else 0
 
-def generate_placeholders(titles_row, case_key, student_data, current_date, ects_data):
+def generate_placeholders(titles_row, case_config, student_data, current_date, ects_data):
     placeholders = {
         "nomApprenant": student_data["Nom"],
         "etendugroupe": student_data["Étendu Groupe"],
@@ -68,7 +68,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
         "datedujour": current_date,
     }
 
-    if case_key == "M1_S1":
+    if case_config["key"] == "M1_S1":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -91,7 +91,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
             "matiere14": titles_row[18],
             "matiere15": titles_row[19],
         })
-    elif case_key == "M1_S2":
+    elif case_config["key"] == "M1_S2":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -114,7 +114,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
             "matiere15": titles_row[18],
             "matiere16": titles_row[19],
         })
-    elif case_key == "M2_S3_MAGI_MEFIM":
+    elif case_config["key"] == "M2_S3_MAGI_MEFIM":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -134,7 +134,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
             "matiere12": titles_row[15],
             "matiere13": titles_row[16],
         })
-    elif case_key == "M2_S3_MAPI":
+    elif case_config["key"] == "M2_S3_MAPI":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -155,7 +155,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
             "matiere13": titles_row[16],
             "matiere14": titles_row[17],
         })
-    elif case_key == "M2_S4":
+    elif case_config["key"] == "M2_S4":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -174,9 +174,10 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
             "matiere11": titles_row[14],
         })
 
-    # Add ECTS values to placeholders
+    # Add ECTS values to placeholders, hiding specified ones
     for i in range(1, 17):
-        placeholders[f"ECTS{i}"] = ects_data.get(f"ECTS{i}", 0)
+        if i not in case_config["hidden_ects"]:
+            placeholders[f"ECTS{i}"] = ects_data.get(f"ECTS{i}", 0)
 
     return placeholders
 
@@ -193,7 +194,7 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     ects_data = ects_config.get(corrected_key, [{}])[0]
     logger.debug(f"ECTS data for {corrected_key}: {ects_data}")
 
-    placeholders = generate_placeholders(case_config["titles_row"], case_config["key"], student_data, current_date, ects_data)
+    placeholders = generate_placeholders(case_config["titles_row"], case_config, student_data, current_date, ects_data)
 
     total_ects = 0  # Initialize total ECTS
 
@@ -203,29 +204,35 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
             grades_coefficients = extract_grades_and_coefficients(grade_str)
             individual_average = calculate_weighted_average([g[0] for g in grades_coefficients], [g[1] for g in grades_coefficients])
             placeholders[f"note{i}"] = f"{individual_average:.2f}" if individual_average else ""
-            if individual_average >= 8:
-                ects_value = ects_data.get(f"ECTS{i}", 0)
+            if individual_average > 8 and i not in case_config["hidden_ects"]:
+                ects_value = ects_data.get(f"ECTS{i}", 1)  # Use default coefficient 1 for hidden ECTS
                 placeholders[f"ECTS{i}"] = ects_value
-            else:
+            elif individual_average > 0:
                 placeholders[f"ECTS{i}"] = 0
+            else:
+                placeholders[f"ECTS{i}"] = ""
         else:
             placeholders[f"note{i}"] = ""
-            placeholders[f"ECTS{i}"] = 0
+            placeholders[f"ECTS{i}"] = ""
 
     for ue, indices in case_config["ects_sum_indices"].items():
         sum_values = sum(float(placeholders[f"note{index}"]) for index in indices if placeholders[f"note{index}"] != "")
-        sum_ects = sum(placeholders[f"ECTS{index}"] for index in indices)
+        sum_ects = sum(placeholders[f"ECTS{index}"] for index in indices if placeholders[f"ECTS{index}"] not in ["", 0])
         count_valid_notes = sum(1 for index in indices if placeholders[f"note{index}"] != "")
         average_ue = round(sum_values / count_valid_notes, 2) if count_valid_notes > 0 else 0
-        placeholders[f"moy{ue}"] = average_ue
-        placeholders[f"ECTS{ue}"] = sum_ects
+        placeholders[f"moy{ue}"] = average_ue if average_ue else ""
+        placeholders[f"ECTS{ue}"] = sum_ects if sum_ects else ""
         total_ects += sum_ects
 
     placeholders["moyenneECTS"] = total_ects
 
-    total_notes = sum(placeholders[f"moy{ue}"] * placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"])
-    total_ects = sum(placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"])
+    total_notes = sum(placeholders[f"moy{ue}"] * placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"] if placeholders[f"moy{ue}"] != "" and placeholders[f"ECTS{ue}"] != "")
+    total_ects = sum(placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"] if placeholders[f"ECTS{ue}"] not in ["", 0])
     placeholders["moyenne"] = round(total_notes / total_ects, 2) if total_ects else 0
+
+    # Remove placeholders for hidden ECTS from the final document
+    for hidden_ects in case_config["hidden_ects"]:
+        placeholders.pop(f"ECTS{hidden_ects}", None)
 
     logger.debug(f"Placeholders: {placeholders}")  # Log the placeholders to check their values
 
@@ -235,3 +242,4 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     output_filepath = os.path.join(output_dir, output_filename)
     doc.save(output_filepath)
     return output_filepath
+

@@ -44,7 +44,8 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                     'UE3': [5, 6],
                     'UE4': [7, 11],
                     'UE5': [13, 14, 15]
-                }
+                },
+                "hidden_ects": [8, 9, 10, 12]
             },
             "M1_S2": {
                 "key": "M1_S2",
@@ -56,7 +57,8 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                     'UE2': [5, 6],
                     'UE3': [8, 9, 10, 11, 12, 13, 14],
                     'UE4': [16],
-                }
+                },
+                "hidden_ects": [9, 10, 11]
             },
             "M2_S3_MAGI_MEFIM": {
                 "key": "M2_S3_MAGI_MEFIM",
@@ -68,7 +70,8 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                     'UE2': [3],
                     'UE3': [4, 5, 6, 7, 8, 9],
                     'UE4': [10, 11, 12, 13],
-                }
+                },
+                "hidden_ects": [4, 8, 9]
             },
             "M2_S3_MAPI": {
                 "key": "M2_S3_MAPI",
@@ -80,7 +83,8 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                     'UE2': [3],
                     'UE3': [4, 5, 6, 7, 8, 9],
                     'UE4': [10, 11, 12, 13, 14],
-                }
+                },
+                "hidden_ects": [4, 8, 9]
             },
             "M2_S4": {
                 "key": "M2_S4",
@@ -92,7 +96,8 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                     'UE2': [2, 3],
                     'UE3': [4, 5, 6, 7, 8],
                     'UE4': [9, 10, 11],
-                }
+                },
+                "hidden_ects": [6, 7]
             }
         }
         
@@ -129,3 +134,4 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
     except Exception as e:
         logger.error("Erreur lors du traitement du fichier Excel", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error processing Excel file: {e}")
+
