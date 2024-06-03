@@ -6,6 +6,7 @@ from docxtpl import DocxTemplate
 from app.core.config import settings
 import os
 import unicodedata
+import math
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -51,8 +52,18 @@ def extract_grades_and_coefficients(grade_str):
 def calculate_weighted_average(notes, ects):
     if not notes or not ects:
         return 0.0
-    total_grade = sum(note * ects for note, ects in zip(notes, ects))
-    total_ects = sum(ects)
+
+    # Filter out notes and ects where ects is zero
+    filtered_notes = [note for note, ect in zip(notes, ects) if ect != 0]
+    filtered_ects = [ect for ect in ects if ect != 0]
+
+    # If no valid notes remain after filtering, return 0.0
+    if not filtered_notes or not filtered_ects:
+        return 0.0
+
+    total_grade = sum(note * ect for note, ect in zip(filtered_notes, filtered_ects))
+    total_ects = sum(filtered_ects)
+    
     return total_grade / total_ects if total_ects != 0 else 0
 
 def generate_placeholders(titles_row, case_config, student_data, current_date, ects_data):
@@ -205,7 +216,7 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
             individual_average = calculate_weighted_average([g[0] for g in grades_coefficients], [g[1] for g in grades_coefficients])
             placeholders[f"note{i}"] = f"{individual_average:.2f}" if individual_average else ""
             if individual_average > 8 and i not in case_config["hidden_ects"]:
-                ects_value = ects_data.get(f"ECTS{i}", 1)  # Use default coefficient 1 for hidden ECTS
+                ects_value = int(ects_data.get(f"ECTS{i}", 1))  # Use default coefficient 1 for hidden ECTS and convert to int
                 placeholders[f"ECTS{i}"] = ects_value
             elif individual_average > 0:
                 placeholders[f"ECTS{i}"] = 0
@@ -216,19 +227,46 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
             placeholders[f"ECTS{i}"] = ""
 
     for ue, indices in case_config["ects_sum_indices"].items():
-        sum_values = sum(float(placeholders[f"note{index}"]) for index in indices if placeholders[f"note{index}"] != "")
-        sum_ects = sum(placeholders[f"ECTS{index}"] for index in indices if placeholders[f"ECTS{index}"] not in ["", 0])
-        count_valid_notes = sum(1 for index in indices if placeholders[f"note{index}"] != "")
-        average_ue = round(sum_values / count_valid_notes, 2) if count_valid_notes > 0 else 0
-        placeholders[f"moy{ue}"] = average_ue if average_ue else ""
-        placeholders[f"ECTS{ue}"] = sum_ects if sum_ects else ""
-        total_ects += sum_ects
+        ue_values = []
+        ue_sum = 0
+        ue_ects = 0
+
+        for index in indices:
+            note = float(placeholders[f"note{index}"]) if placeholders[f"note{index}"] not in ["", None] else 0
+            ects = int(placeholders[f"ECTS{index}"]) if placeholders[f"ECTS{index}"] not in ["", None] else 0
+
+            if ects == 0:
+                ue_values.append(note)
+            else:
+                ue_values.append(note * ects)
+
+            if ects != 0:
+                ue_sum += note * ects
+                ue_ects += ects
+
+        count_valid_notes = len([v for v in ue_values if v != 0])
+        average_ue = math.ceil(ue_sum / ue_ects * 100) / 100 if ue_ects > 0 else 0
+        placeholders[f"moy{ue}"] = f"{average_ue:.2f}" if average_ue else ""
+        placeholders[f"ECTS{ue}"] = ue_ects if ue_ects else ""
+        total_ects += ue_ects
 
     placeholders["moyenneECTS"] = total_ects
 
-    total_notes = sum(placeholders[f"moy{ue}"] * placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"] if placeholders[f"moy{ue}"] != "" and placeholders[f"ECTS{ue}"] != "")
-    total_ects = sum(placeholders[f"ECTS{ue}"] for ue in case_config["ects_sum_indices"] if placeholders[f"ECTS{ue}"] not in ["", 0])
-    placeholders["moyenne"] = round(total_notes / total_ects, 2) if total_ects else 0
+    total_notes = sum(
+        (float(placeholders[f"note{index}"]) if placeholders[f"note{index}"] not in ["", None] else 0)
+        + (int(placeholders[f"ECTS{index}"]) if int(placeholders[f"ECTS{index}"]) == 0 else 0)
+        if int(placeholders[f"ECTS{index}"]) == 0 else float(placeholders[f"note{index}"]) * int(placeholders[f"ECTS{index}"])
+        for ue, indices in case_config["ects_sum_indices"].items()
+        for index in indices
+        if placeholders[f"note{index}"] not in ["", None] and placeholders[f"ECTS{index}"] not in ["", None]
+    )
+    total_ects = sum(
+        int(placeholders[f"ECTS{index}"])
+        for ue, indices in case_config["ects_sum_indices"].items()
+        for index in indices
+        if placeholders[f"ECTS{index}"] not in ["", 0, None]
+    )
+    placeholders["moyenne"] = f"{math.ceil(total_notes / total_ects * 100) / 100:.2f}" if total_ects else 0
 
     # Remove placeholders for hidden ECTS from the final document
     for hidden_ects in case_config["hidden_ects"]:
@@ -242,4 +280,5 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     output_filepath = os.path.join(output_dir, output_filename)
     doc.save(output_filepath)
     return output_filepath
+
 
