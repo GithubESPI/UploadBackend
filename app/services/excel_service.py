@@ -129,4 +129,3 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
     except Exception as e:
         logger.error("Erreur lors du traitement du fichier Excel", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error processing Excel file: {e}")
-

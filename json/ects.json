@@ -17,5 +17,81 @@
       "ECTS14": 2,
       "ECTS15": 2
     }
+  ],
+  "M1-S2": [
+    {
+      "ECTS1": 2,
+      "ECTS2": 2,
+      "ECTS3": 2,
+      "ECTS4": 2,
+      "ECTS5": 1,
+      "ECTS6": 9,
+      "ECTS7": 2,
+      "ECTS8": 2,
+      "ECTS9": 0,
+      "ECTS10": 0,
+      "ECTS11": 0,
+      "ECTS12": 0,
+      "ECTS13": 2,
+      "ECTS14": 2,
+      "ECTS15": 2,
+      "ECTS16": 2
+    }
+  ],
+  "M2-S3-MAGI-MEFIM": [
+    {
+      "ECTS1": 2,
+      "ECTS2": 2,
+      "ECTS3": 2,
+      "ECTS4": 0,
+      "ECTS5": 9,
+      "ECTS6": 2,
+      "ECTS7": 2,
+      "ECTS8": 0,
+      "ECTS9": 0,
+      "ECTS10": 0,
+      "ECTS11": 0,
+      "ECTS12": 0,
+      "ECTS13": 3,
+      "ECTS14": 2,
+      "ECTS15": 3,
+      "ECTS16": 3
+    }
+  ],
+  "M2-S3-MAPI": [
+    {
+      "ECTS1": 2,
+      "ECTS2": 2,
+      "ECTS3": 2,
+      "ECTS4": 0,
+      "ECTS5": 9,
+      "ECTS6": 2,
+      "ECTS7": 2,
+      "ECTS8": 0,
+      "ECTS9": 0,
+      "ECTS10": 0,
+      "ECTS11": 0,
+      "ECTS12": 0,
+      "ECTS13": 2,
+      "ECTS14": 3,
+      "ECTS15": 2,
+      "ECTS16": 2,
+      "ECTS17": 2
+    }
+  ],
+  "M2-S4": [
+    {
+      "ECTS1": 2,
+      "ECTS2": 2,
+      "ECTS3": 2,
+      "ECTS4": 2,
+      "ECTS5": 5,
+      "ECTS6": 0,
+      "ECTS7": 0,
+      "ECTS8": 9,
+      "ECTS9": 4,
+      "ECTS10": 2,
+      "ECTS11": 2
+    }
   ]
 }

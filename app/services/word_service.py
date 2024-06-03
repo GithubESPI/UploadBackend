@@ -24,7 +24,7 @@ def normalize_string(s):
 def extract_grades_and_coefficients(grade_str):
     grades_coefficients = []
     if not grade_str.strip():
-        return grades_coefficients  # Return empty list if string is empty
+            return grades_coefficients  # Return empty list if string is empty
     parts = grade_str.split(" - ")
     for part in parts:
         if "Absent au devoir" in part:
@@ -175,7 +175,7 @@ def generate_placeholders(titles_row, case_key, student_data, current_date, ects
         })
 
     # Add ECTS values to placeholders
-    for i in range(1, 16):
+    for i in range(1, 17):
         placeholders[f"ECTS{i}"] = ects_data.get(f"ECTS{i}", 0)
 
     return placeholders
