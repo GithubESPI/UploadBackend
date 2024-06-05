@@ -69,7 +69,7 @@ def calculate_weighted_average(notes, ects):
 def generate_placeholders(titles_row, case_config, student_data, current_date, ects_data):
     placeholders = {
         "nomApprenant": student_data["Nom"],
-        "etendugroupe": student_data["Étendu Groupe"],
+                "etendugroupe": student_data["Étendu Groupe"],
         "dateNaissance": student_data["Date de Naissance"],
         "groupe": student_data["Nom Groupe"],
         "campus": student_data["Nom Site"],
@@ -125,7 +125,27 @@ def generate_placeholders(titles_row, case_config, student_data, current_date, e
             "matiere15": titles_row[18],
             "matiere16": titles_row[19],
         })
-    elif case_config["key"] == "M2_S3_MAGI_MEFIM":
+    elif case_config["key"] == "M2_S3_MAGI":
+        placeholders.update({
+            "UE1_Title": titles_row[0],
+            "matiere1": titles_row[1],
+            "matiere2": titles_row[2],
+            "UE2_Title": titles_row[3],
+            "matiere3": titles_row[4],
+            "UE3_Title": titles_row[5],
+            "matiere4": titles_row[6],
+            "matiere5": titles_row[7],
+            "matiere6": titles_row[8],
+            "matiere7": titles_row[9],
+            "matiere8": titles_row[10],
+            "matiere9": titles_row[11],
+            "UESPE_Title": titles_row[12],
+            "matiere10": titles_row[13],
+            "matiere11": titles_row[14],
+            "matiere12": titles_row[15],
+            "matiere13": titles_row[16],
+        })
+    elif case_config["key"] == "M2_S3_MEFIM":
         placeholders.update({
             "UE1_Title": titles_row[0],
             "matiere1": titles_row[1],
@@ -280,5 +300,3 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     output_filepath = os.path.join(output_dir, output_filename)
     doc.save(output_filepath)
     return output_filepath
-
-

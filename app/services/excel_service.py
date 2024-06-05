@@ -60,8 +60,21 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 },
                 "hidden_ects": [9, 10, 11]
             },
-            "M2_S3_MAGI_MEFIM": {
-                "key": "M2_S3_MAGI_MEFIM",
+            "M2_S3_MAGI": {
+                "key": "M2_S3_MAGI",
+                "titles_row": df_titles.iloc[0, 2:19].tolist(),
+                "template_word": settings.M2_S3_MAGI_TEMPLATE_WORD,
+                "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18],
+                "ects_sum_indices": {
+                    'UE1': [1, 2],
+                    'UE2': [3],
+                    'UE3': [4, 5, 6, 7, 8, 9],
+                    'UE4': [10, 11, 12, 13],
+                },
+                "hidden_ects": [4, 8, 9]
+            },
+            "M2_S3_MEFIM": {
+                "key": "M2_S3_MEFIM",
                 "titles_row": df_titles.iloc[0, 2:19].tolist(),
                 "template_word": settings.M2_S3_MAGI_TEMPLATE_WORD,
                 "grade_column_indices": [3, 4, 6, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18],
@@ -113,8 +126,12 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
             case_key = "M1_S1"
         elif filename in [os.path.basename(settings.M1_S2_MAPI_TEMPLATE), os.path.basename(settings.M1_S2_MAGI_TEMPLATE), os.path.basename(settings.M1_S2_MEFIM_TEMPLATE), os.path.basename(settings.M1_S2_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S2_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M1_S2_MEFIM_TEMPLATE_NOT_EMPTY)]:
             case_key = "M1_S2"
-        elif filename in [os.path.basename(settings.M2_S3_MAPI_TEMPLATE), os.path.basename(settings.M2_S3_MAGI_TEMPLATE), os.path.basename(settings.M2_S3_MEFIM_TEMPLATE), os.path.basename(settings.M2_S3_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S3_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S3_MEFIM_TEMPLATE_NOT_EMPTY)]:
-            case_key = "M2_S3_MAGI_MEFIM" if "MAGI" in filename or "MEFIM" in filename else "M2_S3_MAPI"
+        elif filename in [os.path.basename(settings.M2_S3_MAGI_TEMPLATE), os.path.basename(settings.M1_S2_MAGI_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M2_S3_MAGI"
+        elif filename in [os.path.basename(settings.M2_S3_MAPI_TEMPLATE), os.path.basename(settings.M1_S2_MAPI_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M2_S3_MAPI"
+        elif filename in [os.path.basename(settings.M2_S3_MEFIM_TEMPLATE), os.path.basename(settings.M1_S2_MEFIM_TEMPLATE_NOT_EMPTY)]:
+            case_key = "M2_S3_MEFIM"
         elif filename in [os.path.basename(settings.M2_S4_MAPI_TEMPLATE), os.path.basename(settings.M2_S4_MAGI_TEMPLATE), os.path.basename(settings.M2_S4_MEFIM_TEMPLATE), os.path.basename(settings.M2_S4_MAPI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S4_MAGI_TEMPLATE_NOT_EMPTY), os.path.basename(settings.M2_S4_MEFIM_TEMPLATE_NOT_EMPTY)]:
             case_key = "M2_S4"
         else:
@@ -134,4 +151,3 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
     except Exception as e:
         logger.error("Erreur lors du traitement du fichier Excel", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error processing Excel file: {e}")
-
