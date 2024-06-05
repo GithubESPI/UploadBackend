@@ -54,9 +54,9 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 "grade_column_indices": [3, 4, 5, 7, 8, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21],
                 "ects_sum_indices": {
                     'UE1': [1, 2, 3],
-                    'UE2': [5, 6],
-                    'UE3': [8, 9, 10, 11, 12, 13, 14],
-                    'UE4': [16],
+                    'UE2': [4, 5],
+                    'UE3': [6, 7, 8, 12],
+                    'UE4': [13, 14, 15, 16],
                 },
                 "hidden_ects": [9, 10, 11]
             },
@@ -107,7 +107,7 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
                 "ects_sum_indices": {
                     'UE1': [1],
                     'UE2': [2, 3],
-                    'UE3': [4, 5, 6, 7, 8],
+                    'UE3': [4, 5, 8],
                     'UE4': [9, 10, 11],
                 },
                 "hidden_ects": [6, 7]
