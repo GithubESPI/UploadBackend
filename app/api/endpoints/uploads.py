@@ -471,5 +471,5 @@ async def generate_bulletins(file: UploadFile = File(...)):
     except Exception as e:
         logger.error("Failed to generate bulletins", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
+    
+    
