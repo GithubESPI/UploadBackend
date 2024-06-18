@@ -10,25 +10,25 @@ app = FastAPI()
 
 try:
     app.include_router(apprenants.router, prefix="/apprenants", tags=["apprenants"])
-    # logger.debug("Le routeur apprenants est inclus.")
+    logger.debug("Le routeur apprenants est inclus.")
 except Exception as e:
     logger.exception("Erreur lors de l'inclusion du routeur apprenants: %s", e)
 
 try:
     app.include_router(groupes.router, prefix="/groupes", tags=["groupes"])
-    # logger.debug("Le routeur groupes est inclus.")
+    logger.debug("Le routeur groupes est inclus.")
 except Exception as e:
     logger.exception("Erreur lors de l'inclusion du routeur groupes: %s", e)
 
 try:
     app.include_router(absences.router, prefix="/absences", tags=["absences"])
-    # logger.debug("Le routeur absences est inclus.")
+    logger.debug("Le routeur absences est inclus.")
 except Exception as e:
     logger.exception("Erreur lors de l'inclusion du routeur absences: %s", e)
 
 try:
     app.include_router(uploads.router, prefix="", tags=["uploads"])
-    # logger.debug("Le routeur uploads est inclus.")
+    logger.debug("Le routeur uploads est inclus.")
 except Exception as e:
     logger.exception("Erreur lors de l'inclusion du routeur uploads: %s", e)
 

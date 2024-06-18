@@ -7,6 +7,7 @@ from app.core.config import settings
 import os
 import unicodedata
 import math
+import docx
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ def generate_placeholders(titles_row, case_config, student_data, current_date, e
         "injustifiee": student_data["ABS injustifiées"],
         "retard": student_data["Retards"],
         "datedujour": current_date,
+        "appreciations": student_data["Appreciations"]
     }
 
     if case_config["key"] == "M1_S1":
@@ -206,7 +208,6 @@ def generate_placeholders(titles_row, case_config, student_data, current_date, e
         })
 
     # Add ECTS values to placeholders, hiding specified ones
-        # Add ECTS values to placeholders, hiding specified ones
     for i in range(1, 17):
         if i not in case_config["hidden_ects"]:
             placeholders[f"ECTS{i}"] = ects_data.get(f"ECTS{i}", 0)
@@ -301,4 +302,3 @@ def generate_word_document(student_data, case_config, template_path, output_dir)
     output_filepath = os.path.join(output_dir, output_filename)
     doc.save(output_filepath)
     return output_filepath
-

@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from app.core.config import settings
 from app.services.word_service import generate_word_document
 import os
+import openpyxl
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -151,3 +152,27 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
     except Exception as e:
         logger.error("Erreur lors du traitement du fichier Excel", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error processing Excel file: {e}")
+
+def extract_appreciations_from_word(word_file_path):
+    import docx
+    doc = docx.Document(word_file_path)
+    appreciations = {}
+    for para in doc.paragraphs:
+        if para.text:
+            parts = para.text.split(':')
+            if len(parts) == 2:
+                name, appreciation = parts
+                appreciations[name.strip()] = appreciation.strip()
+    return appreciations
+
+def update_excel_with_appreciations(template_wb, appreciations, columns_config):
+    template_ws = template_wb.active
+    appreciation_column_index = columns_config.get('appreciation_column_index_template', 31)  # Assuming column AE
+
+    for row in range(2, template_ws.max_row + 1):
+        student_name = template_ws.cell(row=row, column=columns_config['name_column_index_template']).value
+        if student_name and student_name.upper() in appreciations:
+            template_ws.cell(row=row, column=appreciation_column_index).value = appreciations[student_name.upper()]
+
+    return template_wb
+

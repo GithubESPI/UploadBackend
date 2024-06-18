@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.services.api_service import fetch_api_data
 from app.utils.date_utils import sum_durations, format_minutes_to_duration
 from app.services.excel_service import process_excel_file
+from docx import Document
 
 # Configure the logger
 logging.basicConfig(level=logging.DEBUG)
@@ -34,6 +35,24 @@ async def fetch_api_data_for_template(headers):
     absences_data = await fetch_api_data(absences_api_url, headers)
 
     return api_data, groupes_data, absences_data
+
+def extract_appreciations_from_word(word_path):
+    try:
+        doc = Document(word_path)
+        appreciations = {}
+        current_name = None
+        for table in doc.tables:
+            for row in table.rows:
+                cells = row.cells
+                if len(cells) >= 2:
+                    name = cells[0].text.strip()
+                    appreciation = cells[1].text.strip()
+                    if name and appreciation:
+                        appreciations[name] = appreciation
+        return appreciations
+    except Exception as e:
+        logger.error("Failed to extract appreciations from Word document", exc_info=True)
+        return {}
 
 async def process_file(uploaded_wb, template_path, columns_config):
     template_wb = openpyxl.load_workbook(template_path, data_only=True)
@@ -168,14 +187,27 @@ async def process_file(uploaded_wb, template_path, columns_config):
 
     return template_wb
 
-@router.post("/upload-and-integrate-excel")
-async def upload_and_integrate_excel(file: UploadFile = File(...)):
-    try:
-        temp_file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
-        with open(temp_file_path, 'wb') as temp_file:
-            temp_file.write(await file.read())
+def update_excel_with_appreciations(template_wb, appreciations, columns_config):
+    template_ws = template_wb.active
+    for row in range(2, template_ws.max_row + 1):  # Start from row 2 to match the data rows
+        name = template_ws.cell(row=row, column=columns_config['name_column_index_template']).value
+        if name and name in appreciations:
+            template_ws.cell(row=row, column=columns_config['appreciation_column_index_template']).value = appreciations[name]
+    return template_wb
 
-        uploaded_wb = openpyxl.load_workbook(temp_file_path, data_only=True)
+@router.post("/upload-and-integrate-excel-and-word")
+async def upload_and_integrate_excel_and_word(excel_file: UploadFile = File(...), word_file: UploadFile = File(...)):
+    try:
+        # Save the uploaded files temporarily
+        temp_excel_path = os.path.join(settings.UPLOAD_DIR, excel_file.filename)
+        temp_word_path = os.path.join(settings.UPLOAD_DIR, word_file.filename)
+        with open(temp_excel_path, 'wb') as temp_excel_file:
+            temp_excel_file.write(await excel_file.read())
+        with open(temp_word_path, 'wb') as temp_word_file:
+            temp_word_file.write(await word_file.read())
+
+        # Load the uploaded Excel file
+        uploaded_wb = openpyxl.load_workbook(temp_excel_path, data_only=True)
         uploaded_ws = uploaded_wb.active
 
         # Extract specific cells values for template matching
@@ -214,7 +246,6 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
             "MEFIM_S2": ['UE 1 – Economie & Gestion', "Marketing de l'Immobilier", 'Investissement et Financiarisation', 'Fiscalité', 'UE 2 – Droit', "Droit de l'Urbanisme et de la Construction", "Déontologie en France et à l'International", 'UE 4 – Compétences Professionnalisantes', 'Immersion Professionnelle', 'Real Estate English', 'Atelier Méthodologie de la Recherche', 'Techniques de Négociation', "Rencontres de l'Immobilier", 'ESPI Inside', 'Projet Voltaire', 'UE SPE – MEFIM', "Marché d'Actifs Immobiliers", "Baux Commerciaux", 'Evaluation des Actifs Résidentiels', "Audit et Gestion des Immeubles"],
             "MAPI_S3": ['UE 1 – Economie & Gestion', "PropTech et Innovation", 'Economie Immobilière II', 'UE 3 – Aménagement & Urbanisme', "Stratégies et Aménagement des Territoires I", "UE 4 – Compétences Professionnalisantes", 'Communication Digitale, Ecrite et Orale', 'Immersion Professionnelle', 'Real Estate English', 'Méthodologie de la Recherche', "Rencontres de l'Immobilier", 'ESPI Inside', 'UE SPE – MAPI', "Acquisition et Dissociation du Foncier", "Montage des Opérations Tertiaires", "Aménagement et Commande Publique", "Techniques du Bâtiment", "Réhabilitation et Pathologies du Bâtiment"],
             "MAGI_S3": ['UE 1 – Economie & Gestion', "PropTech et Innovation", 'Economie Immobilière II', 'UE 3 – Aménagement & Urbanisme', "Stratégies et Aménagement des Territoires I", "UE 4 – Compétences Professionnalisantes", 'Communication Digitale, Ecrite et Orale', 'Immersion Professionnelle', 'Real Estate English', 'Méthodologie de la Recherche', "Rencontres de l'Immobilier", 'ESPI Inside', 'UE SPE – MAGI', "Rénovation Energétique des Actifs Tertiaires", "Arbitrage, Optimisation et Valorisation des Actifs Tertiaires", 'Maintenance et Facility Management', "Réhabilitation et Pathologies du Bâtiment"],
-            
             "MEFIM_S3": ['UE 1 – Economie & Gestion', "PropTech et Innovation", 'Economie Immobilière II', 'UE 3 – Aménagement & Urbanisme', "Stratégies et Aménagement des Territoires I", "UE 4 – Compétences Professionnalisantes", 'Communication Digitale, Ecrite et Orale', 'Immersion Professionnelle', 'Real Estate English', 'Méthodologie de la Recherche', "Rencontres de l'Immobilier", 'ESPI Inside', 'UE SPE – MEFIM', "Droit des Suretés et de la Transmission", 'Due Diligence', "Evaluation d'Actifs Tertiaires et Industriels", "Gestion de Patrimoine"],
             "MAPI_S4": ['UE 1 – Economie & Gestion', "Economie de l'Environnement", 'UE 3 – Aménagement & Urbanisme', "Normalisation, Labellisation", "Stratégies et Aménagement des Territoires II", 'UE 4 – Compétences Professionnalisantes', 'Real Estate English', 'Mémoire de Recherche', "Rencontres de l'Immobilier", 'ESPI Career Services', 'Immersion Professionnelle', 'UE SPE – MAPI', "Business Game Aménagement et Promotion Immobilière", "Fiscalité et Promotion Immobilière", "Contentieux de l'Urbanisme"],
             "MAGI_S4": ['UE 1 – Economie & Gestion', "Economie de l'Environnement", 'UE 3 – Aménagement & Urbanisme', "Normalisation, Labellisation", "Stratégies et Aménagement des Territoires II", 'UE 4 – Compétences Professionnalisantes', 'Real Estate English', 'Mémoire de Recherche', "Rencontres de l'Immobilier", 'ESPI Career Services', 'Immersion Professionnelle', 'UE SPE – MAGI', "Business Game Property Management", "Gestion des Centres Commerciaux", "Gestion de Contentieux et Recouvrement"],
@@ -235,6 +266,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MAGI": {
                 'name_column_index_uploaded': 2,
@@ -248,6 +280,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MEFIM": {
                 'name_column_index_uploaded': 2,
@@ -261,6 +294,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MAPI_S2": {
                 'name_column_index_uploaded': 2,
@@ -274,6 +308,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MAGI_S2": {
                 'name_column_index_uploaded': 2,
@@ -287,6 +322,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MEFIM_S2": {
                 'name_column_index_uploaded': 2,
@@ -300,6 +336,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 28,
                 'duree_non_justifie_column_index_template': 29,
                 'duree_retard_column_index_template': 30,
+                'appreciation_column_index_template': 31
             },
             "MAPI_S3": {
                 'name_column_index_uploaded': 2,
@@ -313,6 +350,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 26,
                 'duree_non_justifie_column_index_template': 27,
                 'duree_retard_column_index_template': 28,
+                'appreciation_column_index_template': 29
             },
             "MAGI_S3": {
                 'name_column_index_uploaded': 2,
@@ -326,6 +364,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 25,
                 'duree_non_justifie_column_index_template': 26,
                 'duree_retard_column_index_template': 27,
+                'appreciation_column_index_template': 28
             },
             "MEFIM_S3": {
                 'name_column_index_uploaded': 2,
@@ -339,6 +378,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 25,
                 'duree_non_justifie_column_index_template': 26,
                 'duree_retard_column_index_template': 27,
+                'appreciation_column_index_template': 28
             },
             "MAPI_S4": {
                 'name_column_index_uploaded': 2,
@@ -351,7 +391,8 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'etendu_groupe_column_index_template': 22,
                 'duree_justifie_column_index_template': 23,
                 'duree_non_justifie_column_index_template': 24,
-                                'duree_retard_column_index_template': 25,
+                'duree_retard_column_index_template': 25,
+                'appreciation_column_index_template': 26
             },
             "MAGI_S4": {
                 'name_column_index_uploaded': 2,
@@ -365,6 +406,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 23,
                 'duree_non_justifie_column_index_template': 24,
                 'duree_retard_column_index_template': 25,
+                'appreciation_column_index_template': 26
             },
             "MEFIM_S4": {
                 'name_column_index_uploaded': 2,
@@ -378,6 +420,7 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
                 'duree_justifie_column_index_template': 23,
                 'duree_non_justifie_column_index_template': 24,
                 'duree_retard_column_index_template': 25,
+                'appreciation_column_index_template': 26
             },
         }
 
@@ -394,6 +437,13 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
 
         template_wb = await process_file(uploaded_wb, template_to_use, columns_config)
 
+        # Extract appreciations from the uploaded Word file
+        appreciations = extract_appreciations_from_word(temp_word_path)
+        logger.debug(f"Extracted appreciations: {appreciations}")
+
+        # Update the template with the extracted appreciations if needed
+        template_wb = update_excel_with_appreciations(template_wb, appreciations, columns_config)
+
         # Use the template name for the output file
         template_name = os.path.basename(template_to_use).replace('.xlsx', '')
         output_path = os.path.join(settings.OUTPUT_DIR, f'{template_name}.xlsx')
@@ -402,9 +452,8 @@ async def upload_and_integrate_excel(file: UploadFile = File(...)):
     except Exception as e:
         logger.error("Failed to process the file", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-    return JSONResponse(content={"message": "Integration réussie", "output_file": output_path})
-
+    
+    
 @router.post("/generate-bulletins")
 async def generate_bulletins(file: UploadFile = File(...)):
     try:
@@ -422,3 +471,5 @@ async def generate_bulletins(file: UploadFile = File(...)):
     except Exception as e:
         logger.error("Failed to generate bulletins", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+

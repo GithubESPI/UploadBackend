@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 async def fetch_api_data(url: str, headers: dict):
     logger.debug(f"Fetching data from {url} with headers {headers}")
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:  # Enable following redirects
         response = await client.get(url, headers=headers, timeout=60.0)
         if response.status_code != 200:
             logger.error(f"Failed to fetch data: {response.status_code} - {response.text}")
