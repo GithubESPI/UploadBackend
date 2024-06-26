@@ -7,17 +7,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = os.path.join(BASE_DIR, "uploads")
     OUTPUT_DIR: str = os.path.join(BASE_DIR, "template", "S1")
     TEMPLATE_FILE: str = os.path.join(BASE_DIR, "template", "modeleM1S1.docx")
-    
+
     # M1-S1 excel empty
     M1_S1_MAPI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S1", "M1-S1-MAPI.xlsx")
     M1_S1_MAGI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S1", "M1-S1-MAGI.xlsx")
     M1_S1_MEFIM_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S1", "M1-S1-MEFIM.xlsx")
     # M1-S1 excel not empty
-    
     M1_S1_MAPI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S1-MAPI.xlsx")
     M1_S1_MAGI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S1-MAGI.xlsx")
     M1_S1_MEFIM_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S1-MEFIM.xlsx")
-    
     # M1-S1 excel bulletin
     M1_S1_MAPI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM1S1.docx")
     M1_S1_MAGI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM1S1.docx")
@@ -27,15 +25,9 @@ class Settings(BaseSettings):
     M1_S2_MAPI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S2", "M1-S2-MAPI.xlsx")
     M1_S2_MAGI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S2", "M1-S2-MAGI.xlsx")
     M1_S2_MEFIM_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M1-S2", "M1-S2-MEFIM.xlsx")
-    
-    # M1-S1 excel not empty
-    
     M1_S2_MAPI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S2-MAPI.xlsx")
     M1_S2_MAGI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S2-MAGI.xlsx")
     M1_S2_MEFIM_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M1-S2-MEFIM.xlsx")
-    
-    # M1-S1 excel bulletin
-    
     M1_S2_MAPI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM1S2.docx")
     M1_S2_MAGI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM1S2.docx")
     M1_S2_MEFIM_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM1S2.docx")
@@ -44,15 +36,9 @@ class Settings(BaseSettings):
     M2_S3_MAPI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S3", "M2-S3-MAPI.xlsx")
     M2_S3_MAGI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S3", "M2-S3-MAGI.xlsx")
     M2_S3_MEFIM_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S3", "M2-S3-MEFIM.xlsx")
-    
-    # M1-S1 excel not empty
-    
     M2_S3_MAPI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S3-MAPI.xlsx")
     M2_S3_MAGI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S3-MAGI.xlsx")
     M2_S3_MEFIM_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S3-MEFIM.xlsx")
-    
-    # M1-S1 excel bulletin
-    
     M2_S3_MAPI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S3MAPI.docx")
     M2_S3_MAGI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S3.docx")
     M2_S3_MEFIM_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S3.docx")
@@ -61,15 +47,9 @@ class Settings(BaseSettings):
     M2_S4_MAPI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S4", "M2-S4-MAPI.xlsx")
     M2_S4_MAGI_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S4", "M2-S4-MAGI.xlsx")
     M2_S4_MEFIM_TEMPLATE: str = os.path.join(BASE_DIR, "excel", "M2-S4", "M2-S4-MEFIM.xlsx")
-    
-    # M1-S1 excel not empty
-    
     M2_S4_MAPI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S4-MAPI.xlsx")
     M2_S4_MAGI_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S4-MAGI.xlsx")
     M2_S4_MEFIM_TEMPLATE_NOT_EMPTY: str = os.path.join(BASE_DIR, "template", "S1", "M2-S4-MEFIM.xlsx")
-    
-    # M1-S1 excel bulletin
-    
     M2_S4_MAPI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S4.docx")
     M2_S4_MAGI_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S4.docx")
     M2_S4_MEFIM_TEMPLATE_WORD: str = os.path.join(BASE_DIR, "template", "modeleM2S4.docx")
@@ -111,4 +91,3 @@ class Settings(BaseSettings):
 
 # Instanciez les paramètres pour qu'ils soient importés et utilisés dans d'autres fichiers
 settings = Settings()
-

@@ -175,4 +175,3 @@ def update_excel_with_appreciations(template_wb, appreciations, columns_config):
             template_ws.cell(row=row, column=appreciation_column_index).value = appreciations[student_name.upper()]
 
     return template_wb
-

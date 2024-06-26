@@ -3,6 +3,8 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import os
 import openpyxl
+import pypandoc
+from docx2pdf import convert
 from app.core.config import settings
 from app.services.api_service import fetch_api_data
 from app.utils.date_utils import sum_durations, format_minutes_to_duration
@@ -453,7 +455,8 @@ async def upload_and_integrate_excel_and_word(excel_file: UploadFile = File(...)
         logger.error("Failed to process the file", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
-    
+
+
 @router.post("/generate-bulletins")
 async def generate_bulletins(file: UploadFile = File(...)):
     try:
@@ -464,12 +467,24 @@ async def generate_bulletins(file: UploadFile = File(...)):
         output_dir = os.path.join(settings.OUTPUT_DIR, 'bulletins')
         os.makedirs(output_dir, exist_ok=True)
 
+        # Process the Excel file to generate Word bulletins (intermediate step)
         bulletin_paths = process_excel_file(temp_file_path, output_dir)
 
-        return JSONResponse(content={"message": "Bulletins générés avec succès", "bulletins": bulletin_paths})
+        # Convert all Word documents in the output_dir to PDF
+        convert(output_dir)
+
+        pdf_bulletin_paths = [
+            os.path.join(output_dir, filename.replace('.docx', '.pdf'))
+            for filename in os.listdir(output_dir)
+            if filename.endswith('.pdf')
+        ]
+
+        # Optionally, remove the Word documents after conversion
+        for bulletin_path in bulletin_paths:
+            os.remove(bulletin_path)
+
+        return JSONResponse(content={"message": "Bulletins PDF générés avec succès", "bulletins": pdf_bulletin_paths})
 
     except Exception as e:
         logger.error("Failed to generate bulletins", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-    
-    

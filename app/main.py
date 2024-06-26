@@ -1,6 +1,6 @@
 import logging
 from fastapi import FastAPI
-from app.api.endpoints import apprenants, groupes, absences, uploads
+from app.api.endpoints import apprenants, groupes, absences, uploads, importBulletin
 
 # Configurer le logger
 logging.basicConfig(level=logging.DEBUG)
@@ -31,6 +31,12 @@ try:
     logger.debug("Le routeur uploads est inclus.")
 except Exception as e:
     logger.exception("Erreur lors de l'inclusion du routeur uploads: %s", e)
+try:
+    app.include_router(importBulletin.router, prefix="", tags=["import"])
+    logger.debug("Le routeur import est inclus.")
+except Exception as e:
+    logger.exception("Erreur lors de l'inclusion du routeur uploads: %s", e)
+
 
 #uvicorn app.main:app --reload --log-level debug
 #uvicorn app.main:app --reload
