@@ -144,6 +144,12 @@ def process_excel_file(file_path: str, output_dir: str) -> list:
         for index, student_data in df_students.iterrows():
             # Ensure all fields are strings to avoid issues with normalize_string
             student_data = student_data.fillna('').astype(str)
+            
+            # Check if the essential fields are empty to skip empty bulletins
+            if not student_data["Nom"] or not student_data["CodeApprenant"]:
+                logger.info(f"Skipping empty bulletin for row {index} with data: {student_data}")
+                continue
+
             bulletin_path = generate_word_document(student_data, case_config, case_config["template_word"], output_dir)
             bulletin_paths.append(bulletin_path)
             logger.debug(f"Bulletin généré pour {student_data.get('Nom', 'N/A')}: {bulletin_path}")

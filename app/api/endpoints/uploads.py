@@ -1,10 +1,14 @@
+import base64
 import logging
+from typing import List
+import fitz
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import os
 import openpyxl
 import pypandoc
 from docx2pdf import convert
+import requests
 from app.core.config import settings
 from app.services.api_service import fetch_api_data
 from app.utils.date_utils import sum_durations, format_minutes_to_duration
@@ -55,6 +59,31 @@ def extract_appreciations_from_word(word_path):
     except Exception as e:
         logger.error("Failed to extract appreciations from Word document", exc_info=True)
         return {}
+
+
+def extract_code_apprenant(pdf_path: str) -> str:
+    """
+    Extract the codeApprenant from the given PDF file.
+    Assumes the codeApprenant is a numeric value present in the text.
+    """
+    with fitz.open(pdf_path) as pdf_document:
+        for page_num in range(pdf_document.page_count):
+            page = pdf_document.load_page(page_num)
+            text = page.get_text("text")
+            logger.info(f"Extracted text from {pdf_path}: {text}")  # Log the full extracted text for debugging
+            # Extract CodeApprenant by looking for the "Identifiant :" followed by a number
+            lines = text.split('\n')
+            for line in lines:
+                if "Identifiant :" in line:
+                    logger.info(f"Identifiant line found: {line}")  # Log the line containing the Identifiant
+                    # Extract the identifiant from the line
+                    parts = line.split("Identifiant :")
+                    if len(parts) > 1:
+                        code_apprenant = parts[1].strip()
+                        logger.info(f"Extracted code_apprenant before conversion: {code_apprenant}")
+                        if code_apprenant.replace('.', '', 1).isdigit():
+                            return str(int(float(code_apprenant)))  # Convert to integer
+    return None
 
 async def process_file(uploaded_wb, template_path, columns_config):
     template_wb = openpyxl.load_workbook(template_path, data_only=True)
@@ -455,8 +484,6 @@ async def upload_and_integrate_excel_and_word(excel_file: UploadFile = File(...)
         logger.error("Failed to process the file", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
-
-
 @router.post("/generate-bulletins")
 async def generate_bulletins(file: UploadFile = File(...)):
     try:
@@ -487,4 +514,85 @@ async def generate_bulletins(file: UploadFile = File(...)):
 
     except Exception as e:
         logger.error("Failed to generate bulletins", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-and-import-bulletins")
+async def generate_and_import_bulletins(file: UploadFile = File(...)):
+    try:
+        # Step 1: Save the uploaded file
+        temp_file_path = os.path.join(settings.UPLOAD_DIR, file.filename)
+        with open(temp_file_path, 'wb') as temp_file:
+            temp_file.write(await file.read())
+
+        # Step 2: Generate PDF bulletins from the Excel file
+        output_dir = os.path.join(settings.OUTPUT_DIR, 'bulletins')
+        os.makedirs(output_dir, exist_ok=True)
+        bulletin_paths = process_excel_file(temp_file_path, output_dir)
+
+        # Convert all Word documents to PDF (Assuming process_excel_file generates Word docs)
+        convert(output_dir)
+        pdf_bulletin_paths = [
+            os.path.join(output_dir, filename.replace('.docx', '.pdf'))
+            for filename in os.listdir(output_dir)
+            if filename.endswith('.pdf')
+        ]
+
+        # Optionally, remove the Word documents after conversion
+        for bulletin_path in bulletin_paths:
+            os.remove(bulletin_path)
+
+        # Step 3: Import each PDF bulletin to Yparéo
+        import_errors = []
+        for pdf_bulletin_path in pdf_bulletin_paths:
+            try:
+                # Extract codeApprenant from the PDF
+                code_apprenant = extract_code_apprenant(pdf_bulletin_path)
+                if not code_apprenant:
+                    raise ValueError(f"codeApprenant not found in {pdf_bulletin_path}")
+                
+                logger.info(f"Extracted codeApprenant: {code_apprenant} from {pdf_bulletin_path}")
+
+                with open(pdf_bulletin_path, 'rb') as pdf_file:
+                    file_content = pdf_file.read()
+                    encoded_content = base64.b64encode(file_content).decode('utf-8')
+
+                    # Create the JSON payload
+                    payload = {
+                        "contenu": encoded_content,
+                        "nomDocument": os.path.basename(pdf_bulletin_path),
+                        "typeMime": "application/pdf",
+                        "extension": "pdf",
+                    }
+
+                    # Perform the POST request to import the document
+                    endpoint = f"/r/v1/document/apprenant/{code_apprenant}/document?codeRepertoire=1000011"
+                    url = f"{settings.YPAERO_BASE_URL}{endpoint}"
+                    headers = {
+                        "X-Auth-Token": settings.YPAERO_API_TOKEN,
+                        "Content-Type": "application/json"
+                    }
+
+                    response = requests.post(url, headers=headers, json=payload)
+                    
+                    if response.status_code != 200:
+                        import_errors.append({
+                            "file": os.path.basename(pdf_bulletin_path),
+                            "status_code": response.status_code,
+                            "detail": response.text
+                        })
+
+            except Exception as import_exc:
+                logger.error(f"Failed to import bulletin {pdf_bulletin_path}", exc_info=True)
+                import_errors.append({
+                    "file": os.path.basename(pdf_bulletin_path),
+                    "error": str(import_exc)
+                })
+
+        if import_errors:
+            return JSONResponse(content={"message": "Bulletins PDF generated, but some failed to import", "errors": import_errors}, status_code=207)
+        else:
+            return JSONResponse(content={"message": "Bulletins PDF generated and imported successfully", "bulletins": pdf_bulletin_paths})
+
+    except Exception as e:
+        logger.error("Failed to generate and import bulletins", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

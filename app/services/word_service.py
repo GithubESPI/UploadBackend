@@ -78,7 +78,8 @@ def generate_placeholders(titles_row, case_config, student_data, current_date, e
         "injustifiee": student_data["ABS injustifiées"],
         "retard": student_data["Retards"],
         "datedujour": current_date,
-        "appreciations": student_data["Appreciations"]
+        "appreciations": student_data["Appreciations"],
+        "CodeApprenant": student_data["CodeApprenant"]
     }
 
     if case_config["key"] == "M1_S1":

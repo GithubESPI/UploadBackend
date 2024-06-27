@@ -1,19 +1,13 @@
 import base64
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from app.core.config import settings
 import requests
 
 router = APIRouter()
 
-class DocumentModel(BaseModel):
-    contenu: str
-    nomDocument: str
-    mimeType: str
-    extension: str
-
 @router.post("/import")
-async def import_document(document: DocumentModel):
+async def import_document(file: UploadFile = File(...), nomDocument: str = Form(...), mimeType: str = Form(...), extension: str = Form(...)):
     endpoint = f"/r/v1/document/apprenant/69992/document?codeRepertoire=1000011"
     url = f"{settings.YPAERO_BASE_URL}{endpoint}"
     headers = {
@@ -22,12 +16,16 @@ async def import_document(document: DocumentModel):
     }
 
     try:
+        # Read the file content and encode it in base64
+        file_content = await file.read()
+        encoded_content = base64.b64encode(file_content).decode('utf-8')
+
         # Create the JSON payload
         payload = {
-            "contenu": document.contenu,
-            "nomDocument": document.nomDocument,
-            "typeMime": document.mimeType,  # Assurez-vous que ce champ est correctement orthographié et accepté par l'API
-            "extension": document.extension,
+            "contenu": encoded_content,
+            "nomDocument": nomDocument,
+            "typeMime": mimeType,
+            "extension": extension,
         }
 
         # Using the requests library to perform the POST request
